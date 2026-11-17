@@ -39,7 +39,7 @@ GNAT_VERSION="${GNAT_VERSION:-15.2.1}"            # Alire's gnat_native
 GPRBUILD_VERSION="${GPRBUILD_VERSION:-25.0.1}"
 SCANNER_VERSION="${SCANNER_VERSION:-8.4.0.16527}"
 PLUGIN_URL="${PLUGIN_URL:-https://github.com/mmartign/SonarAdaPlugin}"
-PLUGIN_COMMIT="${PLUGIN_COMMIT:-6e95b80fea31dad16a0f9dd8e6d7cb29f775af40}"
+PLUGIN_COMMIT="${PLUGIN_COMMIT:-127d8e6f9f15989fdd4ddb4801fd7a6e21bfea27}"
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPS="$DIR/docker-deps"
