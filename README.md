@@ -110,9 +110,10 @@ firewall:
   - **UBI base images** (each image's `:latest`) merge themselves: the bump is built and tested on
     `update/ubi`, and only then fast-forwarded into `main` and published. A failing build leaves
     `main` alone and retries the next day.
-  - **The plugin** (its next version on its main branch), **SonarScanner CLI** and **Alire** wait in
-    one pull request, built and tested, for a person to merge. GNAT and gprbuild stay put: they
-    follow libadalang, which the plugin pins, so the pull request flags a new libadalang instead.
+  - **The plugin** (its next version on its main branch), **SonarScanner CLI**, **Alire**, and
+    Alire's **GNAT** (the newest in its major, GNAT 15, the one the plugin documents) and
+    **gprbuild** wait in one pull request, built and tested, for a person to merge. The pull request
+    flags a new GNAT major, and a new libadalang (which the plugin pins), for a person to try.
 
   Run either locally with `./check-updates.sh [ubi|upstream] && git diff`.
 - Dependabot keeps the workflows' actions current.

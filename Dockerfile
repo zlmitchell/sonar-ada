@@ -31,7 +31,7 @@
 
 ARG UBI_REGISTRY=registry.access.redhat.com
 
-FROM ${UBI_REGISTRY}/ubi9/openjdk-21:1.24-3.1793588567 AS build
+FROM ${UBI_REGISTRY}/ubi9/openjdk-21:1.24-3.1794341133 AS build
 # parallel compiles: libadalang's largest units need several GB each
 ARG BUILD_JOBS=6
 USER 0
@@ -110,7 +110,7 @@ COPY --from=build --chown=1000:0 /src/target/sonar-ada-plugin-*.jar /plugins/
 COPY --from=build /opt/sonar-ada/ /opt/sonar-ada/
 USER 1000
 
-FROM ${UBI_REGISTRY}/ubi9/openjdk-21-runtime:1.24-3.1793323798 AS scanner
+FROM ${UBI_REGISTRY}/ubi9/openjdk-21-runtime:1.24-3.1794341129 AS scanner
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="sonar-scanner-ada" \
       org.opencontainers.image.description="SonarScanner CLI with libadalang for SonarAdaPlugin (sonar-scanner-ada)" \

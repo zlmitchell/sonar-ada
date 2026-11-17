@@ -3,15 +3,17 @@
 # when all are current):
 #
 #   upstream  PLUGIN_COMMIT     download-deps.sh   the plugin's main branch, once its pom has a new version
+#             GNAT_VERSION      download-deps.sh   Alire's newest gnat_native in the same major (a new one is flagged)
+#             GPRBUILD_VERSION  download-deps.sh   Alire's newest gprbuild
 #             SCANNER_VERSION   download-deps.sh   SonarScanner CLI's latest release
 #             ALR_VERSION       download-deps.sh   Alire's latest release
 #   ubi       FROM tags         Dockerfile         what each UBI 9 image's :latest is (<version>-<release>)
 #
 #   ./check-updates.sh [ubi|upstream] && git diff     # both without an argument
 #
-# GNAT_VERSION and GPRBUILD_VERSION stay: they follow libadalang, which the plugin's pom pins, so a
-# new libadalang is flagged for them instead. Needs gh (logged in, or GH_TOKEN) and skopeo (or
-# Docker, to run it). .github/workflows/check-updates.yml runs each part daily.
+# A new libadalang (the plugin's pom pins it) is flagged: GNAT and gprbuild may have to follow.
+# Needs gh (logged in, or GH_TOKEN) and skopeo (or Docker, to run it).
+# .github/workflows/check-updates.yml runs each part daily.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
@@ -65,6 +67,18 @@ if [ "$part" != ubi ]; then
   else
     echo "Alire $alr: no alr-$alr-bin-x86_64-linux.zip in its release, skipped" >&2
   fi
+
+  # GNAT and gprbuild: Alire's toolchain crates, from its index's default branch (no pre-releases).
+  # GNAT stays in its major, the one the plugin documents; a new major is only flagged.
+  index="repos/alire-project/alire-index/contents/index"
+  branch="$(gh api repos/alire-project/alire-index --jq .default_branch)"
+  releases() { gh api "$index/$1?ref=$branch" --jq '.[].name' | sed -n "s/^${1##*/}-\([0-9][0-9.]*\)\.toml$/\1/p" | sort -V; }
+  gnat="$(pin GNAT_VERSION)" gnats="$(releases gn/gnat_native)"
+  repin GNAT_VERSION "$(grep "^${gnat%%.*}\." <<<"$gnats" | tail -1)" "gnat_native, Alire"
+  newest="$(tail -1 <<<"$gnats")"
+  [ "${newest%%.*}" = "${gnat%%.*}" ] \
+    || echo "- GNAT $newest is out: \`GNAT_VERSION\` stays on GNAT ${gnat%%.*}, the plugin's; try the new major by hand"
+  repin GPRBUILD_VERSION "$(releases gp/gprbuild | tail -1)" "Alire"
 fi
 
 if [ "$part" != upstream ]; then
