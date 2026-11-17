@@ -8,9 +8,9 @@ with the libadalang it needs, and a scanner that can load it.
 | image | for | holds |
 |---|---|---|
 | `ghcr.io/zlmitchell/sonar-ada-plugins` (about 110 MB) | SonarQube's plugin install | the jar, with libadalang's Java bindings, under `/plugins` on UBI 9 minimal |
-| `ghcr.io/zlmitchell/sonar-scanner-ada` (about 580 MB) | CI jobs that scan Ada | SonarScanner CLI on Red Hat's OpenJDK 21 runtime (UBI 9), libadalang's native libraries, and the plugin's wrapper as `sonar-scanner-ada` |
+| `ghcr.io/zlmitchell/sonar-scanner-ada` (about 610 MB) | CI jobs that scan Ada | SonarScanner CLI on Red Hat's OpenJDK 21 runtime (UBI 9), libadalang's native libraries, and the plugin's wrapper as `sonar-scanner-ada` |
 
-Tags: the plugin's version (`1.15.0`, rebuilt in place when a base image or the scanner moves),
+Tags: the plugin's version (`1.16.0`, rebuilt in place when a base image or the scanner moves),
 `latest`, and `sha-<commit>` of this repo. `/opt/sonar-ada/VERSIONS.txt` in each image says what
 it was built from, and `/opt/sonar-ada/src/` holds the plugin's source.
 
@@ -24,13 +24,13 @@ plugins in the list still download with its curl.
 
 ```yaml
 plugins:
-  image: ghcr.io/zlmitchell/sonar-ada-plugins:1.15.0
+  image: ghcr.io/zlmitchell/sonar-ada-plugins:1.16.0
   install:
-    - file:///plugins/sonar-ada-plugin-1.15.0.jar
+    - file:///plugins/sonar-ada-plugin-1.16.0.jar
 ```
 
 Without the chart, copy `/plugins/sonar-ada-plugin-<version>.jar` into
-`extensions/plugins/` and restart. Tested on SonarQube Community Build 26.9.
+`extensions/plugins/` and restart. 1.15.0 was tested on SonarQube Community Build 26.9.
 
 ### Scanning
 
@@ -43,13 +43,13 @@ projects with Ada files.
 ```yaml
 # GitLab CI
 ada-scan:
-  image: ghcr.io/zlmitchell/sonar-scanner-ada:1.15.0
+  image: ghcr.io/zlmitchell/sonar-scanner-ada:1.16.0
   script:
     - sonar-scanner-ada -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=<key>
 ```
 
 ```sh
-docker run --rm -v "$PWD:/src" -w /src ghcr.io/zlmitchell/sonar-scanner-ada:1.15.0 \
+docker run --rm -v "$PWD:/src" -w /src ghcr.io/zlmitchell/sonar-scanner-ada:1.16.0 \
   sonar-scanner-ada -Dsonar.host.url=https://sonar.example.com -Dsonar.token=... -Dsonar.projectKey=<key>
 ```
 
