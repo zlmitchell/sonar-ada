@@ -106,11 +106,15 @@ firewall:
 - [build.yml](.github/workflows/build.yml) builds both images on every change to the build, and
   pushes them to GHCR from `main`. A build takes about an hour on a hosted runner.
 - [check-updates.yml](.github/workflows/check-updates.yml) runs
-  [check-updates.sh](check-updates.sh) daily. It moves the pins to upstream's newest (the plugin's
-  next version on its main branch, SonarScanner CLI, Alire, and the UBI base images) and keeps one
-  pull request open with them, built and tested. Merging it publishes new images. GNAT and gprbuild
-  stay put: they follow libadalang, which the plugin pins, so the pull request flags a new
-  libadalang instead. Run it locally with `./check-updates.sh && git diff`.
+  [check-updates.sh](check-updates.sh) daily, in two lanes:
+  - **UBI base images** (each image's `:latest`) merge themselves: the bump is built and tested on
+    `update/ubi`, and only then fast-forwarded into `main` and published. A failing build leaves
+    `main` alone and retries the next day.
+  - **The plugin** (its next version on its main branch), **SonarScanner CLI** and **Alire** wait in
+    one pull request, built and tested, for a person to merge. GNAT and gprbuild stay put: they
+    follow libadalang, which the plugin pins, so the pull request flags a new libadalang instead.
+
+  Run either locally with `./check-updates.sh [ubi|upstream] && git diff`.
 - Dependabot keeps the workflows' actions current.
 
 ## Licenses

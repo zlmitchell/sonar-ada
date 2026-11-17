@@ -5,6 +5,10 @@
 # download-deps.sh fetches everything and makes the seed (about 8 minutes), then the build compiles
 # libadalang offline and runs the plugin's tests. The scanner target reuses the build stage the
 # plugins target made, from the same Docker daemon.
+#
+# merge (workflow_dispatch): when the build passes, fast-forward main to this branch, then push the
+# images. check-updates.yml starts it that way for UBI bumps. A main that has moved on fails the
+# fast-forward, and nothing is published.
 name: build
 
 on:
@@ -23,11 +27,16 @@ on:
       - seed-deps.sh
       - docker-deps/**
       - .github/workflows/build.yml
-  # check-updates.yml starts this on its branch: a pull request opened with GITHUB_TOKEN starts nothing
+  # check-updates.yml starts this on its branches: a pull request opened with GITHUB_TOKEN starts nothing
   workflow_dispatch:
+    inputs:
+      merge:
+        description: Fast-forward main to this branch when the build passes, and publish
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write # merge only; the build steps never see the token
   packages: write
 
 concurrency:
@@ -40,6 +49,8 @@ jobs:
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # the seed, the build stage and both images need more than the runner has free
       - name: Free disk space
@@ -64,10 +75,26 @@ jobs:
           done
           docker image ls --filter reference='ghcr.io/*/*'
 
-      - name: Push
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      - name: Merge into main
+        if: inputs.merge
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          [ "$GITHUB_REF_NAME" != main ] || { echo "::error::merge is for a branch, not main"; exit 1; }
+          remote="https://x-access-token:$TOKEN@github.com/$GITHUB_REPOSITORY.git"
+          git push "$remote" HEAD:refs/heads/main   # not forced: only a fast-forward
+          git push "$remote" --delete "$GITHUB_REF_NAME"
+
+      - name: Push
+        if: inputs.merge || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # only what main builds now: an older build finishing late mustn't replace newer images
+          git fetch -q --depth=1 "https://github.com/$GITHUB_REPOSITORY.git" main
+          if ! git diff --quiet HEAD FETCH_HEAD -- Dockerfile download-deps.sh seed-deps.sh docker-deps; then
+            echo "::notice::main builds something newer now, and its own build publishes that"
+            exit 0
+          fi
           echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           while read -r ref; do docker push --all-tags "$ref"; done < "$RUNNER_TEMP/images"

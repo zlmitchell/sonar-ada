@@ -1,9 +1,14 @@
-# Daily: check-updates.sh moves the pins to upstream's newest, and one pull request (branch
-# update/upstream) carries them, rewritten whenever upstream moves again. A pull request opened
-# with GITHUB_TOKEN starts no workflows, so this starts build.yml on the branch itself; its run
-# shows on the pull request. Merging publishes the images.
+# Daily, check-updates.sh moves the pins to upstream's newest, in two lanes:
 #
-# Needs "Allow GitHub Actions to create and approve pull requests" (Settings > Actions > General).
+#   ubi       the UBI 9 base images: merged without review. Committed to update/ubi, then build.yml
+#             builds it there (with the plugin's tests) and only then fast-forwards main and
+#             publishes. A failed build leaves main alone, and the next day tries again.
+#   upstream  the plugin, SonarScanner CLI and Alire: one pull request (update/upstream), rewritten
+#             whenever upstream moves again, for you to merge. Merging publishes.
+#
+# GITHUB_TOKEN's pushes and pull requests start no workflows, so this starts build.yml on each
+# branch itself; its run shows on the pull request. Needs "Allow GitHub Actions to create and
+# approve pull requests" (Settings > Actions > General).
 name: check-updates
 
 on:
@@ -20,11 +25,12 @@ concurrency:
   group: check-updates
   cancel-in-progress: false
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
-  check:
+  ubi:
     runs-on: ubuntu-24.04
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       # GitHub turns a schedule off after 60 days without activity in the repo; enabling resets it
       - name: Keep the schedule on
@@ -32,16 +38,33 @@ jobs:
 
       - uses: actions/checkout@v7
 
+      - name: Check the UBI images, build and merge
+        run: |
+          changes="$(./check-updates.sh ubi)"
+          echo "${changes:-UBI images are current}" >> "$GITHUB_STEP_SUMMARY"
+          [ -n "$changes" ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -qam "Update UBI base images" -m "$changes"
+          git push -f origin HEAD:refs/heads/update/ubi
+          gh workflow run build.yml --ref update/ubi -f merge=true
+
+  upstream:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
       - name: Check upstream
         run: |
-          changes="$(./check-updates.sh)"
-          echo "${changes:-nothing new}" >> "$GITHUB_STEP_SUMMARY"
+          changes="$(./check-updates.sh upstream)"
+          echo "${changes:-plugin, scanner and Alire are current}" >> "$GITHUB_STEP_SUMMARY"
           {
             echo "Newer upstream versions:"
             echo
             echo "$changes"
             echo
             echo "build.yml builds this branch and runs the plugin's tests; merging publishes the images."
+            echo "UBI base image bumps don't come here: check-updates.yml merges them itself once they build."
           } > "$RUNNER_TEMP/body.md"
 
       - name: Open or update the pull request
