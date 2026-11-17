@@ -1,0 +1,59 @@
+# Daily: check-updates.sh moves the pins to upstream's newest, and one pull request (branch
+# update/upstream) carries them, rewritten whenever upstream moves again. A pull request opened
+# with GITHUB_TOKEN starts no workflows, so this starts build.yml on the branch itself; its run
+# shows on the pull request. Merging publishes the images.
+#
+# Needs "Allow GitHub Actions to create and approve pull requests" (Settings > Actions > General).
+name: check-updates
+
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: check-updates
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      # GitHub turns a schedule off after 60 days without activity in the repo; enabling resets it
+      - name: Keep the schedule on
+        run: gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/check-updates.yml/enable"
+
+      - uses: actions/checkout@v7
+
+      - name: Check upstream
+        run: |
+          changes="$(./check-updates.sh)"
+          echo "${changes:-nothing new}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "Newer upstream versions:"
+            echo
+            echo "$changes"
+            echo
+            echo "build.yml builds this branch and runs the plugin's tests; merging publishes the images."
+          } > "$RUNNER_TEMP/body.md"
+
+      - name: Open or update the pull request
+        id: pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: update/upstream
+          delete-branch: true
+          commit-message: Update upstream versions
+          title: Update upstream versions
+          body-path: ${{ runner.temp }}/body.md
+
+      - name: Build the branch
+        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        run: gh workflow run build.yml --ref update/upstream

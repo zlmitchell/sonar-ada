@@ -1,0 +1,7 @@
+# The workflows' actions. Everything the images are built from is check-updates.yml's.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

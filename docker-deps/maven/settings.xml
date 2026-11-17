@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven settings for seed-deps.sh, which runs the plugin's Maven build once to collect every
+  artifact it needs (docker-deps/seed/m2.tar.gz). The image build itself runs Maven offline.
+
+  Bind-mounted to /root/.m2/settings.xml, never copied, and only when MAVEN_SETTINGS_CONTENT
+  (a whole settings.xml) isn't set. Empty by default: Maven Central.
+
+  For Artifactory, uncomment the block below. Maven fills ${env.*} in from the environment
+  download-deps.sh passes on (ARTIFACTORY_URL, ARTIFACTORY_USER, ARTIFACTORY_TOKEN), so no
+  credential is written here. maven-remote is the remote repository's key: use yours.
+
+  <servers>
+    <server>
+      <id>artifactory</id>
+      <username>${env.ARTIFACTORY_USER}</username>
+      <password>${env.ARTIFACTORY_TOKEN}</password>
+    </server>
+  </servers>
+  <mirrors>
+    <mirror>
+      <id>artifactory</id>
+      <mirrorOf>*</mirrorOf>
+      <url>${env.ARTIFACTORY_URL}/artifactory/maven-remote</url>
+    </mirror>
+  </mirrors>
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+</settings>

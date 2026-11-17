@@ -1,0 +1,7 @@
+# docker-deps: what download-deps.sh fetches, seeds and writes; the CA and Maven settings slots are committed
+docker-deps/bin/*
+docker-deps/src/*
+docker-deps/seed/*
+docker-deps/yum.repos.d/*
+docker-deps/VERSIONS.txt
+!docker-deps/*/.gitkeep
