@@ -37,9 +37,9 @@ set -euo pipefail
 ALR_VERSION="${ALR_VERSION:-2.1.1}"
 GNAT_VERSION="${GNAT_VERSION:-15.3.1}"            # Alire's gnat_native
 GPRBUILD_VERSION="${GPRBUILD_VERSION:-26.0.1}"
-SCANNER_VERSION="${SCANNER_VERSION:-8.4.0.16527}"
+SCANNER_VERSION="${SCANNER_VERSION:-8.5.0.16571}"
 PLUGIN_URL="${PLUGIN_URL:-https://github.com/mmartign/SonarAdaPlugin}"
-PLUGIN_COMMIT="${PLUGIN_COMMIT:-127d8e6f9f15989fdd4ddb4801fd7a6e21bfea27}"
+PLUGIN_COMMIT="${PLUGIN_COMMIT:-b49002e8b25b785264cb795298ef51ecab81beaf}"
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPS="$DIR/docker-deps"
