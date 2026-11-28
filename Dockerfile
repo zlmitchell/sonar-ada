@@ -31,7 +31,7 @@
 
 ARG UBI_REGISTRY=registry.access.redhat.com
 
-FROM ${UBI_REGISTRY}/ubi9/openjdk-21:1.24-3.1794341133 AS build
+FROM ${UBI_REGISTRY}/ubi9/openjdk-21:1.24-5.1795165348 AS build
 # parallel compiles: libadalang's largest units need several GB each
 ARG BUILD_JOBS=6
 USER 0
@@ -99,7 +99,7 @@ WORKDIR /src
 RUN --network=none LD_PRELOAD=$JAVA_HOME/lib/libjsig.so MAVEN_OPTS=-XX:+UseSignalChaining mvn -B -q package \
  && ls target/sonar-ada-plugin-*.jar
 
-FROM ${UBI_REGISTRY}/ubi9/ubi-minimal:9.9-1794467051 AS plugins
+FROM ${UBI_REGISTRY}/ubi9/ubi-minimal:9.9-1795198179 AS plugins
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="sonar-ada-plugins" \
       org.opencontainers.image.description="SonarAdaPlugin (github.com/mmartign/SonarAdaPlugin) for SonarQube's plugin init container (the Helm chart's plugins.image)" \
@@ -110,7 +110,7 @@ COPY --from=build --chown=1000:0 /src/target/sonar-ada-plugin-*.jar /plugins/
 COPY --from=build /opt/sonar-ada/ /opt/sonar-ada/
 USER 1000
 
-FROM ${UBI_REGISTRY}/ubi9/openjdk-21-runtime:1.24-3.1794341129 AS scanner
+FROM ${UBI_REGISTRY}/ubi9/openjdk-21-runtime:1.24-5.1795165349 AS scanner
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="sonar-scanner-ada" \
       org.opencontainers.image.description="SonarScanner CLI with libadalang for SonarAdaPlugin (sonar-scanner-ada)" \
